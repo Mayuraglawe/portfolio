@@ -512,5 +512,339 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Start counters if hero is visible
         startCounters();
+
+        // Fetch GitHub data
+        fetchGitHubDashboard('Mayuraglawe');
     });
+
+    // ========================================
+    // GITHUB DASHBOARD
+    // ========================================
+    const GITHUB_USERNAME = 'Mayuraglawe';
+    const LANG_COLORS = {
+        JavaScript: '#f1e05a', TypeScript: '#3178c6', Python: '#3572A5',
+        HTML: '#e34c26', CSS: '#563d7c', Java: '#b07219', 'C++': '#f34b7d',
+        C: '#555555', 'C#': '#178600', Go: '#00ADD8', Rust: '#dea584',
+        Ruby: '#701516', PHP: '#4F5D95', Swift: '#F05138', Kotlin: '#A97BFF',
+        Dart: '#00B4AB', Shell: '#89e051', Vue: '#41b883', SCSS: '#c6538c',
+        Jupyter: '#DA5B0B', Dockerfile: '#384d54', Makefile: '#427819',
+    };
+
+    async function fetchGitHubDashboard(username) {
+        try {
+            // Fetch profile & repos in parallel
+            const [profileRes, reposRes, eventsRes] = await Promise.all([
+                fetch(`https://api.github.com/users/${username}`),
+                fetch(`https://api.github.com/users/${username}/repos?sort=updated&per_page=100`),
+                fetch(`https://api.github.com/users/${username}/events/public?per_page=30`)
+            ]);
+
+            const profile = await profileRes.json();
+            const repos = await reposRes.json();
+            const events = await eventsRes.json();
+
+            if (profile.message === 'Not Found') {
+                console.error('GitHub user not found');
+                return;
+            }
+
+            // Populate profile
+            populateProfile(profile);
+
+            // Populate stats
+            populateStats(profile, repos);
+
+            // Populate languages
+            populateLanguages(repos);
+
+            // Populate recent repos
+            populateRepos(repos);
+
+            // Populate activity feed
+            populateActivity(events);
+
+            // Last updated
+            const now = new Date().toLocaleString();
+            const lastUpdated = document.getElementById('ghLastUpdated');
+            if (lastUpdated) {
+                lastUpdated.innerHTML = `<i class="fas fa-check-circle" style="color: #10b981;"></i> Live data from GitHub &mdash; Updated ${now}`;
+            }
+
+        } catch (err) {
+            console.error('GitHub API Error:', err);
+            const lastUpdated = document.getElementById('ghLastUpdated');
+            if (lastUpdated) {
+                lastUpdated.innerHTML = `<i class="fas fa-exclamation-circle" style="color: #ef4444;"></i> Could not fetch GitHub data. Refresh to retry.`;
+            }
+        }
+    }
+
+    function populateProfile(profile) {
+        const avatar = document.getElementById('ghAvatar');
+        const name = document.getElementById('ghName');
+        const username = document.getElementById('ghUsername');
+        const bio = document.getElementById('ghBio');
+        const location = document.getElementById('ghLocation');
+        const joined = document.getElementById('ghJoined');
+
+        if (avatar) avatar.src = profile.avatar_url || '';
+        if (name) name.textContent = profile.name || profile.login;
+        if (username) username.textContent = `@${profile.login}`;
+        if (bio) bio.textContent = profile.bio || 'Developer & Creator';
+        if (location) location.innerHTML = `<i class="fas fa-map-marker-alt"></i> ${profile.location || 'Earth'}`;
+        if (joined) {
+            const date = new Date(profile.created_at);
+            joined.innerHTML = `<i class="fas fa-calendar"></i> Joined ${date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`;
+        }
+    }
+
+    function populateStats(profile, repos) {
+        // Total stars & forks from all repos
+        let totalStars = 0;
+        let totalForks = 0;
+        if (Array.isArray(repos)) {
+            repos.forEach(repo => {
+                totalStars += repo.stargazers_count || 0;
+                totalForks += repo.forks_count || 0;
+            });
+        }
+
+        animateNumber('ghRepos', profile.public_repos || 0);
+        animateNumber('ghStars', totalStars);
+        animateNumber('ghForks', totalForks);
+        animateNumber('ghFollowers', profile.followers || 0);
+        animateNumber('ghFollowing', profile.following || 0);
+    }
+
+    function animateNumber(elementId, target) {
+        const el = document.getElementById(elementId);
+        if (!el) return;
+        const duration = 1500;
+        const step = target / (duration / 16);
+        let current = 0;
+
+        function update() {
+            current += step;
+            if (current >= target) {
+                el.textContent = target;
+                return;
+            }
+            el.textContent = Math.floor(current);
+            requestAnimationFrame(update);
+        }
+        update();
+    }
+
+    function populateLanguages(repos) {
+        if (!Array.isArray(repos)) return;
+
+        const langCount = {};
+        repos.forEach(repo => {
+            if (repo.language) {
+                langCount[repo.language] = (langCount[repo.language] || 0) + 1;
+            }
+        });
+
+        const sorted = Object.entries(langCount).sort((a, b) => b[1] - a[1]);
+        const total = sorted.reduce((sum, [, count]) => sum + count, 0);
+
+        const langBar = document.getElementById('ghLangsBar');
+        const langLegend = document.getElementById('ghLangsLegend');
+
+        if (!langBar || !langLegend || sorted.length === 0) return;
+
+        langBar.innerHTML = '';
+        langLegend.innerHTML = '';
+
+        sorted.forEach(([lang, count]) => {
+            const pct = ((count / total) * 100).toFixed(1);
+            const color = LANG_COLORS[lang] || '#8b5cf6';
+
+            // Bar segment
+            const segment = document.createElement('div');
+            segment.className = 'gh-lang-segment';
+            segment.style.width = `${pct}%`;
+            segment.style.backgroundColor = color;
+            segment.title = `${lang}: ${pct}%`;
+            langBar.appendChild(segment);
+
+            // Legend item
+            const item = document.createElement('div');
+            item.className = 'gh-lang-item';
+            item.innerHTML = `
+                <span class="gh-lang-dot" style="background:${color}"></span>
+                <span>${lang}</span>
+                <span class="gh-lang-pct">${pct}%</span>
+            `;
+            langLegend.appendChild(item);
+        });
+    }
+
+    function populateRepos(repos) {
+        if (!Array.isArray(repos)) return;
+
+        const grid = document.getElementById('ghReposGrid');
+        if (!grid) return;
+
+        grid.innerHTML = '';
+
+        // Show top 6 most recently updated
+        const recent = repos.slice(0, 6);
+
+        recent.forEach(repo => {
+            const langColor = LANG_COLORS[repo.language] || '#8b5cf6';
+            const updatedDate = timeAgo(new Date(repo.updated_at));
+
+            const card = document.createElement('div');
+            card.className = 'gh-repo-card';
+            card.innerHTML = `
+                <div class="gh-repo-header">
+                    <i class="fas fa-book"></i>
+                    <a href="${repo.html_url}" target="_blank" rel="noopener" class="gh-repo-name">${repo.name}</a>
+                </div>
+                <p class="gh-repo-desc">${repo.description || 'No description provided.'}</p>
+                <div class="gh-repo-footer">
+                    ${repo.language ? `<span><span class="gh-repo-lang-dot" style="background:${langColor}"></span>${repo.language}</span>` : ''}
+                    <span><i class="fas fa-star"></i> ${repo.stargazers_count}</span>
+                    <span><i class="fas fa-code-branch"></i> ${repo.forks_count}</span>
+                    <span class="gh-repo-updated">${updatedDate}</span>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    function populateActivity(events) {
+        if (!Array.isArray(events)) return;
+
+        const feed = document.getElementById('ghActivityFeed');
+        if (!feed) return;
+
+        feed.innerHTML = '';
+
+        // Show top 10 events
+        const recent = events.slice(0, 10);
+
+        if (recent.length === 0) {
+            feed.innerHTML = '<div class="gh-activity-item"><div class="gh-activity-content"><span class="gh-activity-text">No recent public activity.</span></div></div>';
+            return;
+        }
+
+        recent.forEach(event => {
+            const { icon, color, text } = formatEvent(event);
+            if (!text) return;
+
+            const item = document.createElement('div');
+            item.className = 'gh-activity-item';
+            item.innerHTML = `
+                <div class="gh-activity-icon" style="background:${color}">
+                    <i class="${icon}"></i>
+                </div>
+                <div class="gh-activity-content">
+                    <div class="gh-activity-text">${text}</div>
+                    <div class="gh-activity-time">${timeAgo(new Date(event.created_at))}</div>
+                </div>
+            `;
+            feed.appendChild(item);
+        });
+    }
+
+    function formatEvent(event) {
+        const repo = event.repo ? event.repo.name : '';
+        const repoLink = `<a href="https://github.com/${repo}" target="_blank" rel="noopener">${repo.split('/')[1] || repo}</a>`;
+
+        switch (event.type) {
+            case 'PushEvent': {
+                const count = event.payload.commits ? event.payload.commits.length : 0;
+                return {
+                    icon: 'fas fa-code-branch',
+                    color: 'linear-gradient(135deg, #7c3aed, #a78bfa)',
+                    text: `Pushed ${count} commit${count !== 1 ? 's' : ''} to ${repoLink}`
+                };
+            }
+            case 'CreateEvent': {
+                const ref = event.payload.ref_type;
+                return {
+                    icon: 'fas fa-plus',
+                    color: 'linear-gradient(135deg, #10b981, #06b6d4)',
+                    text: `Created ${ref} ${event.payload.ref ? `<strong>${event.payload.ref}</strong> in ` : ''}${repoLink}`
+                };
+            }
+            case 'DeleteEvent': {
+                return {
+                    icon: 'fas fa-trash',
+                    color: 'linear-gradient(135deg, #ef4444, #ec4899)',
+                    text: `Deleted ${event.payload.ref_type} <strong>${event.payload.ref}</strong> in ${repoLink}`
+                };
+            }
+            case 'WatchEvent': {
+                return {
+                    icon: 'fas fa-star',
+                    color: 'linear-gradient(135deg, #f59e0b, #ef4444)',
+                    text: `Starred ${repoLink}`
+                };
+            }
+            case 'ForkEvent': {
+                return {
+                    icon: 'fas fa-code-branch',
+                    color: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
+                    text: `Forked ${repoLink}`
+                };
+            }
+            case 'IssuesEvent': {
+                return {
+                    icon: 'fas fa-exclamation-circle',
+                    color: 'linear-gradient(135deg, #ec4899, #f59e0b)',
+                    text: `${event.payload.action} an issue in ${repoLink}`
+                };
+            }
+            case 'PullRequestEvent': {
+                return {
+                    icon: 'fas fa-code-branch',
+                    color: 'linear-gradient(135deg, #8b5cf6, #06b6d4)',
+                    text: `${event.payload.action} a pull request in ${repoLink}`
+                };
+            }
+            case 'IssueCommentEvent': {
+                return {
+                    icon: 'fas fa-comment',
+                    color: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+                    text: `Commented on an issue in ${repoLink}`
+                };
+            }
+            case 'ReleaseEvent': {
+                return {
+                    icon: 'fas fa-tag',
+                    color: 'linear-gradient(135deg, #10b981, #f59e0b)',
+                    text: `Published release <strong>${event.payload.release?.tag_name || ''}</strong> in ${repoLink}`
+                };
+            }
+            default: {
+                return {
+                    icon: 'fas fa-circle',
+                    color: 'linear-gradient(135deg, #64748b, #94a3b8)',
+                    text: `${event.type.replace('Event', '')} on ${repoLink}`
+                };
+            }
+        }
+    }
+
+    function timeAgo(date) {
+        const seconds = Math.floor((new Date() - date) / 1000);
+        const intervals = [
+            { label: 'year', seconds: 31536000 },
+            { label: 'month', seconds: 2592000 },
+            { label: 'week', seconds: 604800 },
+            { label: 'day', seconds: 86400 },
+            { label: 'hour', seconds: 3600 },
+            { label: 'minute', seconds: 60 },
+        ];
+        for (const interval of intervals) {
+            const count = Math.floor(seconds / interval.seconds);
+            if (count >= 1) {
+                return `${count} ${interval.label}${count > 1 ? 's' : ''} ago`;
+            }
+        }
+        return 'Just now';
+    }
 });

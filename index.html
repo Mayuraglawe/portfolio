@@ -30,6 +30,7 @@
                 <li><a href="#about" class="nav-link">About</a></li>
                 <li><a href="#skills" class="nav-link">Skills</a></li>
                 <li><a href="#projects" class="nav-link">Projects</a></li>
+                <li><a href="#github" class="nav-link">GitHub</a></li>
                 <li><a href="#contact" class="nav-link">Contact</a></li>
             </ul>
             <a href="#contact" class="nav-cta">Let's Talk</a>
@@ -471,6 +472,108 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- GitHub Dashboard Section -->
+    <section class="github-dashboard section" id="github">
+        <div class="container">
+            <div class="section-header" data-animate="fade-up">
+                <span class="section-tag"><i class="fab fa-github"></i> Open Source</span>
+                <h2 class="section-title">GitHub <span class="gradient-text">Dashboard</span></h2>
+                <p class="section-subtitle">Live stats from my GitHub profile — auto-updated every time you visit.</p>
+            </div>
+
+            <!-- Profile Card -->
+            <div class="gh-profile-card" data-animate="fade-up" data-delay="100">
+                <div class="gh-profile-left">
+                    <img class="gh-avatar" id="ghAvatar" src="" alt="GitHub Avatar">
+                    <div class="gh-profile-info">
+                        <h3 id="ghName">Loading...</h3>
+                        <span class="gh-username" id="ghUsername">@Mayuraglawe</span>
+                        <p class="gh-bio" id="ghBio"></p>
+                        <div class="gh-meta">
+                            <span id="ghLocation"><i class="fas fa-map-marker-alt"></i> —</span>
+                            <span id="ghJoined"><i class="fas fa-calendar"></i> —</span>
+                        </div>
+                    </div>
+                </div>
+                <a href="https://github.com/Mayuraglawe" target="_blank" rel="noopener" class="btn btn-outline gh-follow-btn">
+                    <i class="fab fa-github"></i>
+                    <span>View Profile</span>
+                </a>
+            </div>
+
+            <!-- Stats Row -->
+            <div class="gh-stats-row" data-animate="fade-up" data-delay="200">
+                <div class="gh-stat-card">
+                    <div class="gh-stat-icon gradient-bg-1"><i class="fas fa-book"></i></div>
+                    <div class="gh-stat-number" id="ghRepos">—</div>
+                    <div class="gh-stat-label">Public Repos</div>
+                </div>
+                <div class="gh-stat-card">
+                    <div class="gh-stat-icon gradient-bg-2"><i class="fas fa-star"></i></div>
+                    <div class="gh-stat-number" id="ghStars">—</div>
+                    <div class="gh-stat-label">Total Stars</div>
+                </div>
+                <div class="gh-stat-card">
+                    <div class="gh-stat-icon gradient-bg-3"><i class="fas fa-code-branch"></i></div>
+                    <div class="gh-stat-number" id="ghForks">—</div>
+                    <div class="gh-stat-label">Total Forks</div>
+                </div>
+                <div class="gh-stat-card">
+                    <div class="gh-stat-icon gradient-bg-4"><i class="fas fa-users"></i></div>
+                    <div class="gh-stat-number" id="ghFollowers">—</div>
+                    <div class="gh-stat-label">Followers</div>
+                </div>
+                <div class="gh-stat-card">
+                    <div class="gh-stat-icon gradient-bg-5"><i class="fas fa-user-plus"></i></div>
+                    <div class="gh-stat-number" id="ghFollowing">—</div>
+                    <div class="gh-stat-label">Following</div>
+                </div>
+            </div>
+
+            <!-- Contribution Graph -->
+            <div class="gh-contrib-section" data-animate="fade-up" data-delay="300">
+                <h3 class="gh-section-title"><i class="fas fa-fire"></i> Contribution Graph</h3>
+                <div class="gh-contrib-card">
+                    <img class="gh-contrib-graph" id="ghContribGraph" src="https://ghchart.rshah.org/7c3aed/Mayuraglawe" alt="GitHub Contribution Graph">
+                </div>
+                <div class="gh-streak-card">
+                    <img class="gh-streak-img" src="https://github-readme-streak-stats.herokuapp.com/?user=Mayuraglawe&theme=midnight-purple&hide_border=true&background=1a1a2e&ring=7c3aed&fire=ec4899&currStreakLabel=a78bfa&sideLabels=94a3b8&currStreakNum=f1f5f9&sideNums=f1f5f9&dates=64748b" alt="GitHub Streak Stats">
+                </div>
+            </div>
+
+            <!-- Language Stats -->
+            <div class="gh-langs-section" data-animate="fade-up" data-delay="200">
+                <h3 class="gh-section-title"><i class="fas fa-code"></i> Most Used Languages</h3>
+                <div class="gh-langs-bar" id="ghLangsBar">
+                    <!-- Populated by JS -->
+                </div>
+                <div class="gh-langs-legend" id="ghLangsLegend">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- Recent Repos -->
+            <div class="gh-repos-section" data-animate="fade-up" data-delay="300">
+                <h3 class="gh-section-title"><i class="fas fa-folder-open"></i> Recent Repositories</h3>
+                <div class="gh-repos-grid" id="ghReposGrid">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="gh-activity-section" data-animate="fade-up" data-delay="400">
+                <h3 class="gh-section-title"><i class="fas fa-bolt"></i> Recent Activity</h3>
+                <div class="gh-activity-feed" id="ghActivityFeed">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <div class="gh-last-updated" data-animate="fade-up">
+                <span id="ghLastUpdated"><i class="fas fa-sync-alt"></i> Fetching latest data...</span>
             </div>
         </div>
     </section>

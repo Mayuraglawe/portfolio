@@ -514,13 +514,14 @@ document.addEventListener('DOMContentLoaded', () => {
         startCounters();
 
         // Fetch GitHub data
-        fetchGitHubDashboard('mayuraglawe22');
+        fetchGitHubDashboard('Mayuraglawe');
     });
 
     // ========================================
     // GITHUB DASHBOARD — Full Rewrite
-    // ========================================
-    const GITHUB_USERNAME = 'mayuraglawe22';
+    let allGhRepos = []; // Store for "See more" logic
+    let allGhEvents = []; // Store for activity "See more" logic
+    const GITHUB_USERNAME = 'Mayuraglawe';
     const LANG_COLORS = {
         JavaScript: '#f1e05a', TypeScript: '#3178c6', Python: '#3572A5',
         HTML: '#e34c26', CSS: '#563d7c', Java: '#b07219', 'C++': '#f34b7d',
@@ -537,15 +538,17 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchGitHubDashboard(username) {
         try {
             // Fetch everything in parallel
-            const [profileRes, reposRes, eventsRes] = await Promise.all([
+            const [profileRes, reposRes, eventsRes, contribRes] = await Promise.all([
                 fetch(`https://api.github.com/users/${username}`),
                 fetch(`https://api.github.com/users/${username}/repos?sort=pushed&per_page=100`),
-                fetch(`https://api.github.com/users/${username}/events/public?per_page=50`)
+                fetch(`https://api.github.com/users/${username}/events/public?per_page=100`),
+                fetch(`https://github-contributions-api.deno.dev/${username}.json`)
             ]);
 
             const profile = await profileRes.json();
             const repos = await reposRes.json();
             const events = await eventsRes.json();
+            const contribData = await contribRes.json();
 
             if (profile.message === 'Not Found') {
                 console.error('GitHub user not found');
@@ -554,7 +557,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             populateProfile(profile);
             populateStats(profile, repos);
-            buildContributionGraph(events);
+            buildContributionGraph(contribData);
             populateLanguages(repos);
             populateRepos(repos);
             populateActivity(events);
@@ -653,52 +656,49 @@ document.addEventListener('DOMContentLoaded', () => {
     // ============================
     // GREEN CONTRIBUTION GRAPH
     // ============================
-    function buildContributionGraph(events) {
+    function buildContributionGraph(data) {
         const calendar = document.getElementById('ghContribCalendar');
         const countEl = document.getElementById('ghContribCount');
-        if (!calendar) return;
+        if (!calendar || !data || !data.contributions) return;
 
-        // Build a map of date -> event count from public events
-        const eventsByDate = {};
-        if (Array.isArray(events)) {
-            events.forEach(e => {
-                const date = e.created_at.slice(0, 10); // YYYY-MM-DD
-                eventsByDate[date] = (eventsByDate[date] || 0) + 1;
+        // Total contributions (Live from profile)
+        const realTotal = data.totalContributions || data.total || 0;
+        if (countEl) animateGhNumber('ghContribCount', realTotal);
+
+        // Flatten the weeks array from the API if it's nested
+        let days = [];
+        if (Array.isArray(data.contributions[0])) {
+            // It's [ [day, day, ...], [day, day, ...], ... ]
+            data.contributions.forEach(week => {
+                week.forEach(day => {
+                    days.push({
+                        date: new Date(day.date),
+                        dateStr: day.date,
+                        count: day.contributionCount || day.count || 0,
+                        level: day.contributionLevel === "NONE" ? 0 : 
+                               (day.contributionLevel === "FIRST_QUARTILE" ? 1 : 
+                               (day.contributionLevel === "SECOND_QUARTILE" ? 2 : 
+                               (day.contributionLevel === "THIRD_QUARTILE" ? 3 : 4)))
+                    });
+                });
             });
+        } else {
+            // It's a flat array [day, day, ...]
+            days = data.contributions.map(day => ({
+                date: new Date(day.date),
+                dateStr: day.date,
+                count: day.count || day.contributionCount || 0,
+                level: day.level || 0
+            }));
         }
 
-        // Generate past 365 days of contribution squares
-        const today = new Date();
-        const totalDays = 365;
-        const days = [];
+        if (days.length === 0) return;
 
-        for (let i = totalDays - 1; i >= 0; i--) {
-            const d = new Date(today);
-            d.setDate(d.getDate() - i);
-            const dateStr = d.toISOString().slice(0, 10);
-            const dayOfWeek = d.getDay(); // 0=Sun
-            days.push({ date: d, dateStr, dayOfWeek, count: eventsByDate[dateStr] || 0 });
-        }
-
-        // Pad the beginning so first column starts on Sunday
-        const firstDay = days[0].dayOfWeek;
-        for (let i = 0; i < firstDay; i++) {
-            days.unshift(null); // empty pad
-        }
-
-        // Group into weeks (columns)
+        // Group into weeks (the API already might be grouped, but we ensure it)
         const weeks = [];
         for (let i = 0; i < days.length; i += 7) {
             weeks.push(days.slice(i, i + 7));
         }
-
-        // Determine max count for scaling
-        const maxCount = Math.max(1, ...Object.values(eventsByDate));
-
-        // Total contributions
-        let totalContrib = 0;
-        Object.values(eventsByDate).forEach(c => totalContrib += c);
-        if (countEl) countEl.textContent = totalContrib;
 
         // Build month labels
         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -708,17 +708,20 @@ document.addEventListener('DOMContentLoaded', () => {
         let lastMonth = -1;
         weeks.forEach(week => {
             const realDay = week.find(d => d !== null);
-            const monthLabel = document.createElement('span');
-            monthLabel.className = 'gh-contrib-month';
-            monthLabel.style.width = '15px';
-            monthLabel.style.textAlign = 'center';
-            monthLabel.style.display = 'inline-block';
-
             if (realDay && realDay.date.getMonth() !== lastMonth) {
                 lastMonth = realDay.date.getMonth();
+                const monthLabel = document.createElement('span');
+                monthLabel.className = 'gh-contrib-month';
+                monthLabel.style.width = '14px'; // match square width
+                monthLabel.style.display = 'inline-block';
                 monthLabel.textContent = monthNames[lastMonth];
+                monthsRow.appendChild(monthLabel);
+            } else {
+                const spacer = document.createElement('span');
+                spacer.style.width = '14px';
+                spacer.style.display = 'inline-block';
+                monthsRow.appendChild(spacer);
             }
-            monthsRow.appendChild(monthLabel);
         });
 
         calendar.innerHTML = '';
@@ -732,57 +735,35 @@ document.addEventListener('DOMContentLoaded', () => {
         weeks.forEach(week => {
             const col = document.createElement('div');
             col.className = 'gh-contrib-week';
+            col.style.display = 'flex';
+            col.style.flexDirection = 'column';
+            col.style.gap = '3px';
 
-            for (let r = 0; r < 7; r++) {
-                const day = week[r];
+            week.forEach(day => {
                 const cell = document.createElement('div');
                 cell.className = 'gh-contrib-day';
-
-                if (!day) {
-                    cell.style.visibility = 'hidden';
-                } else {
-                    let level = 0;
-                    if (day.count > 0) {
-                        const ratio = day.count / maxCount;
-                        if (ratio <= 0.25) level = 1;
-                        else if (ratio <= 0.5) level = 2;
-                        else if (ratio <= 0.75) level = 3;
-                        else level = 4;
-                    }
-                    cell.setAttribute('data-level', level);
-                    cell.setAttribute('data-tooltip',
-                        `${day.count} contribution${day.count !== 1 ? 's' : ''} on ${day.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
-                    );
+                
+                // Map API levels to 0-4
+                let level = day.level;
+                // If it's a string from GitHub's internal API, map it
+                if (typeof level === 'string') {
+                    if (level.includes('FOURTH')) level = 4;
+                    else if (level.includes('THIRD')) level = 3;
+                    else if (level.includes('SECOND')) level = 2;
+                    else if (level.includes('FIRST')) level = 1;
+                    else level = 0;
                 }
+                
+                cell.setAttribute('data-level', level);
+                cell.setAttribute('data-tooltip',
+                    `${day.count} contribution${day.count !== 1 ? 's' : ''} on ${day.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+                );
                 col.appendChild(cell);
-            }
+            });
             gridWrap.appendChild(col);
         });
 
         calendar.appendChild(gridWrap);
-
-        // Also simulate a fuller graph with random data for dates without events
-        // (GitHub API only returns ~90 days of events, so we add light random fills)
-        enhanceContribGraph(gridWrap);
-    }
-
-    function enhanceContribGraph(gridWrap) {
-        // For dates beyond the events API range (~90 days), sprinkle some activity
-        // to make it look realistic. Only affects cells that are currently level 0.
-        const allCells = gridWrap.querySelectorAll('.gh-contrib-day:not([style*="hidden"])');
-        const totalCells = allCells.length;
-
-        // Only touch cells older than 90 days (roughly first 275 cells)
-        const olderCells = Array.from(allCells).slice(0, Math.max(0, totalCells - 90));
-        olderCells.forEach(cell => {
-            if (cell.getAttribute('data-level') === '0') {
-                // ~35% chance of having some activity
-                if (Math.random() < 0.35) {
-                    const level = Math.random() < 0.5 ? 1 : (Math.random() < 0.7 ? 2 : 3);
-                    cell.setAttribute('data-level', level);
-                }
-            }
-        });
     }
 
     // ============================
@@ -831,8 +812,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // ============================
     // REPOS — GitHub card style
     // ============================
-    function populateRepos(repos) {
+    function populateRepos(repos, limit = 4) {
         if (!Array.isArray(repos)) return;
+        allGhRepos = repos; // Store all
 
         const grid = document.getElementById('ghReposGrid');
         if (!grid) return;
@@ -845,44 +827,65 @@ document.addEventListener('DOMContentLoaded', () => {
             return new Date(b.pushed_at) - new Date(a.pushed_at);
         });
 
-        const top = sorted.slice(0, 6);
+        const top = sorted.slice(0, limit);
 
-        top.forEach(repo => {
+        top.forEach((repo, i) => {
             const langColor = LANG_COLORS[repo.language] || '#8b5cf6';
             const sizeKB = repo.size || 0;
             const sizeStr = sizeKB > 1024 ? `${(sizeKB / 1024).toFixed(1)} MB` : `${sizeKB} KB`;
 
             const card = document.createElement('div');
             card.className = 'gh-repo-card';
+            card.style.animation = `fadeInUp 0.5s ease ${i * 0.1}s both`;
             card.innerHTML = `
                 <div class="gh-repo-header">
                     <i class="fas fa-book"></i>
                     <a href="${repo.html_url}" target="_blank" rel="noopener" class="gh-repo-name">${repo.name}</a>
-                    <span class="gh-repo-visibility">${repo.private ? 'Private' : 'Public'}</span>
+                    <span class="gh-repo-visibility">Public</span>
                 </div>
                 <p class="gh-repo-desc">${repo.description || 'No description provided.'}</p>
                 <div class="gh-repo-footer">
                     ${repo.language ? `<span><span class="gh-repo-lang-dot" style="background:${langColor}"></span>${repo.language}</span>` : ''}
                     ${repo.stargazers_count > 0 ? `<span><i class="fas fa-star"></i> ${repo.stargazers_count}</span>` : ''}
-                    ${repo.forks_count > 0 ? `<span><i class="fas fa-code-branch"></i> ${repo.forks_count}</span>` : ''}
-                    <span class="gh-repo-size">${sizeStr}</span>
+                    <span><i class="fas fa-code-branch"></i> ${repo.forks_count || 0}</span>
                 </div>
             `;
             grid.appendChild(card);
+        });
+
+        // Toggle "See more" / "See less"
+        const showMoreBtn = document.getElementById('ghShowMore');
+        if (showMoreBtn) {
+            if (repos.length <= 4) {
+                showMoreBtn.parentElement.style.display = 'none';
+            } else {
+                showMoreBtn.parentElement.style.display = 'flex';
+                showMoreBtn.textContent = limit >= 8 ? 'See less' : 'See more';
+            }
+        }
+    }
+
+    // GitHub Show More/Less Toggle
+    const ghShowMore = document.getElementById('ghShowMore');
+    if (ghShowMore) {
+        ghShowMore.addEventListener('click', () => {
+            const isExpanded = ghShowMore.textContent === 'See less';
+            populateRepos(allGhRepos, isExpanded ? 4 : 8);
         });
     }
 
     // ============================
     // ACTIVITY TIMELINE
     // ============================
-    function populateActivity(events) {
+    function populateActivity(events, limit = 4) {
         if (!Array.isArray(events)) return;
+        allGhEvents = events;
 
         const feed = document.getElementById('ghActivityFeed');
         if (!feed) return;
         feed.innerHTML = '';
 
-        const recent = events.slice(0, 15);
+        const recent = events.slice(0, limit);
 
         if (recent.length === 0) {
             feed.innerHTML = `<div class="gh-timeline-item">
@@ -892,12 +895,13 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        recent.forEach(event => {
+        recent.forEach((event, i) => {
             const { icon, text, detail } = formatEvent(event);
             if (!text) return;
 
             const item = document.createElement('div');
             item.className = 'gh-timeline-item';
+            item.style.animation = `fadeInRight 0.5s ease ${i * 0.1}s both`;
             item.innerHTML = `
                 <div class="gh-timeline-dot"><i class="${icon}"></i></div>
                 <div class="gh-timeline-body">
@@ -909,6 +913,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `;
             feed.appendChild(item);
+        });
+
+        // Toggle "See more" / "See less"
+        const activeShowMore = document.getElementById('ghActivityShowMore');
+        if (activeShowMore) {
+            if (events.length <= 4) {
+                activeShowMore.parentElement.style.display = 'none';
+            } else {
+                activeShowMore.parentElement.style.display = 'flex';
+                activeShowMore.textContent = limit >= 8 ? 'See less' : 'See more';
+            }
+        }
+    }
+
+    // GitHub Activity Show More/Less Toggle
+    const ghActivityShowMore = document.getElementById('ghActivityShowMore');
+    if (ghActivityShowMore) {
+        ghActivityShowMore.addEventListener('click', () => {
+            const isExpanded = ghActivityShowMore.textContent === 'See less';
+            populateActivity(allGhEvents, isExpanded ? 4 : 8);
         });
     }
 
@@ -1019,4 +1043,71 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return 'Just now';
     }
+    // LinkedIn Read More Toggle
+    document.querySelectorAll('.li-read-more').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const content = btn.parentElement;
+            const short = content.querySelector('.short');
+            const full = content.querySelector('.full');
+            
+            if (full.classList.contains('hidden')) {
+                full.classList.remove('hidden');
+                short.classList.add('hidden');
+                btn.textContent = 'Read less';
+            } else {
+                full.classList.add('hidden');
+                short.classList.remove('hidden');
+                btn.textContent = 'Read more';
+            }
+        });
+    });
+    
+    // LinkedIn Show All Posts Toggle
+    const showMoreBtn = document.getElementById('liShowMore');
+    if (showMoreBtn) {
+        showMoreBtn.addEventListener('click', () => {
+            const extraPosts = document.querySelectorAll('.li-extra-post');
+            if (extraPosts.length === 0) return;
+            const isHidden = extraPosts[0].classList.contains('hidden');
+            
+            extraPosts.forEach(post => {
+                if (isHidden) {
+                    post.classList.remove('hidden');
+                } else {
+                    post.classList.add('hidden');
+                }
+            });
+            
+            showMoreBtn.textContent = isHidden ? 'Show less activity' : 'Show all activity';
+        });
+    }
+
+    // LinkedIn Post Image Slider
+    document.querySelectorAll('.li-post-media-slider').forEach(slider => {
+        const images = slider.querySelectorAll('.li-post-img');
+        const dots = slider.querySelectorAll('.li-dot');
+        const prevBtn = slider.querySelector('.li-slider-prev');
+        const nextBtn = slider.querySelector('.li-slider-next');
+        let currentIndex = 0;
+
+        if (images.length <= 1) {
+            if (prevBtn) prevBtn.style.display = 'none';
+            if (nextBtn) nextBtn.style.display = 'none';
+            return;
+        }
+
+        function updateSlider(index) {
+            currentIndex = (index + images.length) % images.length;
+            
+            images.forEach((img, i) => img.classList.toggle('active', i === currentIndex));
+            dots.forEach((dot, i) => dot.classList.toggle('active', i === currentIndex));
+        }
+
+        if (prevBtn) prevBtn.addEventListener('click', () => updateSlider(currentIndex - 1));
+        if (nextBtn) nextBtn.addEventListener('click', () => updateSlider(currentIndex + 1));
+        
+        dots.forEach((dot, i) => {
+            dot.addEventListener('click', () => updateSlider(i));
+        });
+    });
 });

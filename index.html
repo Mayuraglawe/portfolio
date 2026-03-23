@@ -3,7 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mayur Aglawe | Portfolio</title>
+    <title>Mayur Aglawe | Full-Stack System Architect & Developer</title>
+    <meta name="description" content="Portfolio of Mayur Aglawe, a systems-focused Full-Stack Developer specializing in high-performance web applications, AI-based systems, and scalable backend architectures.">
+    <meta name="keywords" content="Mayur Aglawe, Portfolio, Full-Stack Developer, AI Developer, System Architect, Web Developer India, SIH 2025 Finalist">
+    
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://mayuraglawe.github.io/portfolio/">
+    <meta property="og:title" content="Mayur Aglawe | Full-Stack System Architect">
+    <meta property="og:description" content="Crafting beautiful digital experiences at the intersection of design and technology. Check out my latest projects and GitHub stats.">
+    <meta property="og:image" content="images/profile.png">
+
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/linkedin.css">
     <link rel="stylesheet" href="css/github.css">
@@ -13,6 +23,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+    <!-- Scroll Progress -->
+    <div class="scroll-progress" id="scrollProgress"></div>
+
     <!-- Cursor Glow Effect -->
     <div class="cursor-glow" id="cursorGlow"></div>
 
@@ -135,7 +148,7 @@
             <div class="about-grid">
                 <div class="about-image-col" data-animate="fade-right">
                     <div class="about-image-card">
-                        <img src="images/about_me.png" alt="Mayur Aglawe Portrait" class="about-image">
+                        <img src="images/dev_experience_landscape.png" alt="Developer Troubleshooting Landscape" class="about-image">
                         <div class="experience-badge">
                             <span class="exp-number">2+</span>
                             <span class="exp-text">Years of<br>Experience</span>
@@ -653,69 +666,6 @@
     </div>
 </section>
 
-    <!-- Testimonials Section -->
-    <section class="testimonials section">
-        <div class="container">
-            <div class="section-header" data-animate="fade-up">
-                <span class="section-tag">Testimonials</span>
-                <h2 class="section-title">What People <span class="gradient-text">Say</span></h2>
-            </div>
-            <div class="testimonials-slider" data-animate="fade-up" data-delay="100">
-                <div class="testimonial-track" id="testimonialTrack">
-                    <div class="testimonial-card">
-                        <div class="testimonial-stars">
-                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-                        </div>
-                        <p>"Exceptional work! Delivered a stunning website that exceeded all our expectations. Highly skilled and professional throughout the entire project."</p>
-                        <div class="testimonial-author">
-                            <div class="author-avatar gradient-bg-1">
-                                <i class="fas fa-user"></i>
-                            </div>
-                            <div>
-                                <h4>Sarah Johnson</h4>
-                                <span>CEO, TechStart Inc.</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="testimonial-card">
-                        <div class="testimonial-stars">
-                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-                        </div>
-                        <p>"Incredibly talented developer with an eye for design. Transformed our outdated platform into a modern, user-friendly experience. Will definitely work together again!"</p>
-                        <div class="testimonial-author">
-                            <div class="author-avatar gradient-bg-2">
-                                <i class="fas fa-user"></i>
-                            </div>
-                            <div>
-                                <h4>Michael Chen</h4>
-                                <span>Product Manager, InnovateCo</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="testimonial-card">
-                        <div class="testimonial-stars">
-                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-                        </div>
-                        <p>"A true professional who listens, understands, and delivers. The app they built for us has been a game-changer for our business. Top-notch quality!"</p>
-                        <div class="testimonial-author">
-                            <div class="author-avatar gradient-bg-3">
-                                <i class="fas fa-user"></i>
-                            </div>
-                            <div>
-                                <h4>Emily Rodriguez</h4>
-                                <span>Founder, GreenLeaf Studios</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="testimonial-nav">
-                    <button class="test-nav-btn" id="testPrev" aria-label="Previous testimonial"><i class="fas fa-chevron-left"></i></button>
-                    <div class="test-dots" id="testDots"></div>
-                    <button class="test-nav-btn" id="testNext" aria-label="Next testimonial"><i class="fas fa-chevron-right"></i></button>
-                </div>
-            </div>
-        </div>
-    </section>
 
     <!-- Contact Section -->
     <section class="contact section" id="contact">
@@ -790,6 +740,7 @@
 
     <!-- Footer -->
     <footer class="footer">
+        <div class="footer-glow"></div>
         <div class="container">
             <div class="footer-content">
                 <div class="footer-brand">
@@ -798,26 +749,43 @@
                         <span class="logo-text">Dev</span>
                         <span class="logo-bracket">/&gt;</span>
                     </a>
-                    <p>Crafting digital experiences with passion and precision.</p>
+                    <p class="footer-desc">Architecting scalable systems and high-performance digital solutions.</p>
+                    <a href="mailto:mayuraglawe06@gmail.com" class="footer-email-link">
+                        mayuraglawe06@gmail.com
+                    </a>
                 </div>
-                <div class="footer-links">
-                    <a href="#home">Home</a>
-                    <a href="#about">About</a>
-                    <a href="#skills">Skills</a>
-                    <a href="#projects">Projects</a>
-                    <a href="#github">GitHub</a>
-                    <a href="#linkedin">LinkedIn</a>
-                    <a href="#contact">Contact</a>
+                <div class="footer-center">
+                    <h4 class="footer-heading">Quick Links</h4>
+                    <div class="footer-links">
+                        <a href="#home">Home</a>
+                        <a href="#about">About</a>
+                        <a href="#skills">Skills</a>
+                        <a href="#projects">Projects</a>
+                        <a href="#github">GitHub</a>
+                        <a href="#linkedin">LinkedIn</a>
+                        <a href="#contact">Contact</a>
+                    </div>
                 </div>
-                <div class="footer-social">
-                    <a href="https://github.com/Mayuraglawe" target="_blank" rel="noopener" aria-label="GitHub"><i class="fab fa-github"></i></a>
-                    <a href="https://www.linkedin.com/in/mayur-aglawe-77aa73262/" target="_blank" rel="noopener" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
-                    <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                <div class="footer-right">
+                    <h4 class="footer-heading">Let's Connect</h4>
+                    <div class="footer-availability">
+                        <span class="status-dot pulse-dot"></span>
+                        <span>Available for Opportunities</span>
+                    </div>
+                    <div class="footer-social">
+                        <a href="https://github.com/Mayuraglawe" target="_blank" rel="noopener" aria-label="GitHub"><i class="fab fa-github"></i></a>
+                        <a href="https://www.linkedin.com/in/mayur-aglawe-77aa73262/" target="_blank" rel="noopener" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="mailto:mayuraglawe06@gmail.com" aria-label="Email"><i class="fas fa-envelope"></i></a>
+                    </div>
+                    <a href="Mayur_Aglawe_Resume (1).pdf" class="btn btn-primary footer-cta" download="Mayur_Aglawe_Resume.pdf">
+                        <span>Download CV</span>
+                        <i class="fas fa-download"></i>
+                    </a>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2026 <span class="gradient-text">Mayur Aglawe</span>. All rights reserved.</p>
-                <p>Designed & Built with <i class="fas fa-heart heart-icon"></i></p>
+                <p>&copy; 2026 <span class="gradient-text font-bold">Mayur Aglawe</span>. All rights reserved.</p>
+                <p>Crafted with <i class="fas fa-heart heart-icon pulse-anim"></i> in India</p>
             </div>
         </div>
     </footer>

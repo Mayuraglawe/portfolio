@@ -168,10 +168,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const navLinks = document.querySelectorAll('.nav-link');
 
     window.addEventListener('scroll', () => {
+        // Navbar scrolled class
         if (window.scrollY > 50) {
             navbar.classList.add('scrolled');
         } else {
             navbar.classList.remove('scrolled');
+        }
+
+        // Scroll Progress Bar logic
+        const scrollProgress = document.getElementById('scrollProgress');
+        if (scrollProgress) {
+            const h = document.documentElement;
+            const b = document.body;
+            const st = 'scrollTop';
+            const sh = 'scrollHeight';
+            const percent = (h[st] || b[st]) / ((h[sh] || b[sh]) - h.clientHeight) * 100;
+            scrollProgress.style.width = percent + "%";
         }
     });
 
@@ -353,69 +365,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // ========================================
-    // TESTIMONIALS SLIDER
-    // ========================================
-    const track = document.getElementById('testimonialTrack');
-    const cards = track ? track.children : [];
-    const dotsContainer = document.getElementById('testDots');
-    const prevBtn = document.getElementById('testPrev');
-    const nextBtn = document.getElementById('testNext');
-    let currentSlide = 0;
-
-    // Create dots
-    if (dotsContainer && cards.length) {
-        for (let i = 0; i < cards.length; i++) {
-            const dot = document.createElement('div');
-            dot.classList.add('test-dot');
-            if (i === 0) dot.classList.add('active');
-            dot.addEventListener('click', () => goToSlide(i));
-            dotsContainer.appendChild(dot);
-        }
-    }
-
-    function goToSlide(index) {
-        currentSlide = index;
-        if (track) {
-            track.style.transform = `translateX(-${currentSlide * 100}%)`;
-        }
-        const dots = dotsContainer ? dotsContainer.querySelectorAll('.test-dot') : [];
-        dots.forEach((dot, i) => {
-            dot.classList.toggle('active', i === currentSlide);
-        });
-    }
-
-    if (prevBtn) {
-        prevBtn.addEventListener('click', () => {
-            const prev = currentSlide === 0 ? cards.length - 1 : currentSlide - 1;
-            goToSlide(prev);
-        });
-    }
-
-    if (nextBtn) {
-        nextBtn.addEventListener('click', () => {
-            const next = (currentSlide + 1) % cards.length;
-            goToSlide(next);
-        });
-    }
-
-    // Auto-slide
-    let autoSlide = setInterval(() => {
-        if (cards.length) {
-            goToSlide((currentSlide + 1) % cards.length);
-        }
-    }, 5000);
-
-    // Pause on hover
-    const slider = document.querySelector('.testimonials-slider');
-    if (slider) {
-        slider.addEventListener('mouseenter', () => clearInterval(autoSlide));
-        slider.addEventListener('mouseleave', () => {
-            autoSlide = setInterval(() => {
-                goToSlide((currentSlide + 1) % cards.length);
-            }, 5000);
-        });
-    }
 
     // ========================================
     // CONTACT FORM
@@ -509,29 +458,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // ========================================
-    // ANIMATE CSS KEYFRAME FOR FILTER
-    // ========================================
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-    `;
-    document.head.appendChild(style);
+
 
     // ========================================
     // PRELOADER (trigger animations after load)
     // ========================================
     window.addEventListener('load', () => {
-        document.body.classList.add('loaded');
         
         // Trigger hero animations immediately
         const heroElements = document.querySelectorAll('.hero [data-animate]');
@@ -578,7 +510,6 @@ document.addEventListener('DOMContentLoaded', () => {
         Lua: '#000080', Haskell: '#5e5086', Elixir: '#6e4a7e',
     };
 
-    const GH_GREEN_LEVELS = ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'];
 
     async function fetchGitHubDashboard(username, isRefresh = false) {
         const lastUpdated = document.getElementById('ghLastUpdated');
@@ -600,11 +531,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderAll(data.profile, data.repos, data.events, data.contribData);
             }
 
-            const [profileRes, reposRes, eventsRes, contribRes] = await Promise.all([
+            const [profileRes, reposRes, eventsRes, contribRes, externalRepoRes] = await Promise.all([
                 fetch(`https://api.github.com/users/${username}${cb}`),
                 fetch(`https://api.github.com/users/${username}/repos?sort=pushed&per_page=100${cb.replace('?','&')}`),
                 fetch(`https://api.github.com/users/${username}/events/public?per_page=100${cb.replace('?','&')}`),
-                fetch(`https://github-contributions-api.deno.dev/${username}.json${cb}`).catch(() => null)
+                fetch(`https://github-contributions-api.deno.dev/${username}.json${cb}`).catch(() => null),
+                fetch(`https://api.github.com/repos/Paritosh0404/Lead-Generation${cb}`).catch(() => null)
             ]);
 
             // Early check for rate limit
@@ -612,9 +544,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (profileRes.status === 404) throw new Error('User not found');
 
             const profile = await profileRes.json();
-            const repos = await reposRes.json();
+            let repos = await reposRes.json();
             const events = await eventsRes.json();
             const contribData = contribRes ? await contribRes.json() : null;
+            const externalRepo = externalRepoRes ? await externalRepoRes.json() : null;
+
+            if (externalRepo && externalRepo.id) {
+                // Ensure it's not already in the list
+                if (!repos.some(r => r.id === externalRepo.id)) {
+                    repos.push(externalRepo);
+                }
+            }
 
             if (profile.id) {
                 // Success! Cache it and render
@@ -896,8 +836,34 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!grid) return;
         grid.innerHTML = '';
 
-        // Sort by stars first, then by recently pushed
+        // Priority repositories requested by user
+        const PINNED_REPOS = [
+            'Coommerce',
+            'Lead-Generation',
+            'Decimal-Binary'
+        ];
+
+        const UI_NAMES = {
+            'Coommerce': 'E-Coommerce-Platform-Website-',
+            'Lead-Generation': 'lead_generation',
+            'Decimal-Binary': 'Decimal-Binary'
+        };
+
+        // Sort: Pinned first, then by stars, then by recently pushed
         const sorted = [...repos].sort((a, b) => {
+            const match = (repo, query) => {
+                const name = repo.name.toLowerCase();
+                const q = query.toLowerCase();
+                return name === q || name === q.replace(/\s+/g, '-') || name.includes(q.replace(/\s+/g, '-'));
+            };
+
+            const aPinnedIndex = PINNED_REPOS.findIndex(p => match(a, p));
+            const bPinnedIndex = PINNED_REPOS.findIndex(p => match(b, p));
+
+            if (aPinnedIndex !== -1 && bPinnedIndex !== -1) return aPinnedIndex - bPinnedIndex;
+            if (aPinnedIndex !== -1) return -1;
+            if (bPinnedIndex !== -1) return 1;
+
             const starDiff = (b.stargazers_count || 0) - (a.stargazers_count || 0);
             if (starDiff !== 0) return starDiff;
             return new Date(b.pushed_at) - new Date(a.pushed_at);
@@ -910,13 +876,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const sizeKB = repo.size || 0;
             const sizeStr = sizeKB > 1024 ? `${(sizeKB / 1024).toFixed(1)} MB` : `${sizeKB} KB`;
 
+            // Find the pretty name if it's pinned
+            let displayName = repo.name;
+            for (const [key, val] of Object.entries(UI_NAMES)) {
+                if (repo.name.toLowerCase().includes(key.toLowerCase())) {
+                    displayName = val;
+                    break;
+                }
+            }
+
             const card = document.createElement('div');
             card.className = 'gh-repo-card';
             card.style.animation = `fadeInUp 0.5s ease ${i * 0.1}s both`;
             card.innerHTML = `
                 <div class="gh-repo-header">
                     <i class="fas fa-book"></i>
-                    <a href="${repo.html_url}" target="_blank" rel="noopener" class="gh-repo-name">${repo.name}</a>
+                    <a href="${repo.html_url}" target="_blank" rel="noopener" class="gh-repo-name">${displayName}</a>
                     <span class="gh-repo-visibility">Public</span>
                 </div>
                 <p class="gh-repo-desc">${repo.description || 'No description provided.'}</p>

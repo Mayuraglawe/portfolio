@@ -13,6 +13,15 @@ document.addEventListener('DOMContentLoaded', () => {
             cursorGlow.style.left = e.clientX + 'px';
             cursorGlow.style.top = e.clientY + 'px';
         }
+
+        // Hero Ornament Parallax
+        const ornaments = document.querySelectorAll('.ornament');
+        ornaments.forEach(orn => {
+            const speed = parseFloat(orn.getAttribute('data-parallax')) || 0.05;
+            const x = (window.innerWidth / 2 - e.clientX) * speed;
+            const y = (window.innerHeight / 2 - e.clientY) * speed;
+            orn.style.transform = `translate(${x}px, ${y}px)`;
+        });
     });
 
     // ========================================
@@ -36,6 +45,29 @@ document.addEventListener('DOMContentLoaded', () => {
         mouse.y = e.clientY;
     });
 
+    // ========================================
+    // MAGNETIC BUTTONS & INTERACTIVE ELEMENTS
+    // ========================================
+    const interactives = document.querySelectorAll('.btn, .nav-link, .nav-cta, .social-link');
+    
+    interactives.forEach(el => {
+        el.addEventListener('mousemove', (e) => {
+            const rect = el.getBoundingClientRect();
+            const x = e.clientX - rect.left - rect.width / 2;
+            const y = e.clientY - rect.top - rect.height / 2;
+            
+            el.style.transform = `translate(${x * 0.35}px, ${y * 0.35}px)`;
+            if (el.classList.contains('btn')) {
+                el.style.boxShadow = `${-x * 0.15}px ${-y * 0.15}px 25px rgba(16, 185, 129, 0.4)`;
+            }
+        });
+        
+        el.addEventListener('mouseleave', () => {
+            el.style.transform = '';
+            el.style.boxShadow = '';
+        });
+    });
+
     class Particle {
         constructor() {
             this.x = Math.random() * canvas.width;
@@ -49,9 +81,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         getRandomColor() {
             const colors = [
-                'rgba(124, 58, 237,',   // purple
-                'rgba(236, 72, 153,',   // pink
-                'rgba(6, 182, 212,',    // cyan
+                'rgba(16, 185, 129,',   // emerald
+                'rgba(59, 130, 246,',   // blue
+                'rgba(45, 212, 191,',   // teal
                 'rgba(245, 158, 11,',   // amber
             ];
             return colors[Math.floor(Math.random() * colors.length)];
@@ -186,11 +218,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // ========================================
     const typewriterEl = document.getElementById('typewriter');
     const phrases = [
-        'Full Stack Developer',
-        'UI/UX Designer',
-        'Creative Problem Solver',
-        'Open Source Contributor',
-        'Tech Enthusiast'
+        'Full-Stack System Architect',
+        'Next-Gen App Developer',
+        'Complex Problem Solver',
+        'Performance Engineer',
+        'Tech Innovator'
     ];
     let phraseIndex = 0;
     let charIndex = 0;
@@ -313,7 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (filter === 'all' || category === filter) {
                     card.classList.remove('hidden');
-                    card.style.animation = `fadeInUp 0.5s ease ${i * 0.1}s both`;
+                    card.style.animation = `scaleIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) ${i * 0.08}s both`;
                 } else {
                     card.classList.add('hidden');
                 }
@@ -515,6 +547,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Fetch GitHub data
         fetchGitHubDashboard('Mayuraglawe');
+
+        // Set up auto-refresh every 5 minutes
+        setInterval(() => fetchGitHubDashboard('Mayuraglawe', true), 300000);
+
+        // Set up manual refresh button
+        const refreshBtn = document.getElementById('ghRefreshBtn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => {
+                if (!refreshBtn.classList.contains('loading')) {
+                    fetchGitHubDashboard('Mayuraglawe', true);
+                }
+            });
+        }
     });
 
     // ========================================
@@ -535,46 +580,72 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const GH_GREEN_LEVELS = ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'];
 
-    async function fetchGitHubDashboard(username) {
+    async function fetchGitHubDashboard(username, isRefresh = false) {
+        const lastUpdated = document.getElementById('ghLastUpdated');
+        const refreshBtn = document.getElementById('ghRefreshBtn');
+        
+        if (isRefresh && refreshBtn) {
+            refreshBtn.classList.add('loading');
+            refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Refreshing...';
+        }
+
         try {
-            // Fetch everything in parallel
+            // Add cache buster to everything to ensure truly "live" data
+            const cb = `?t=${Date.now()}`;
+            
+            // Try to load cached data first for instant view
+            const cachedData = localStorage.getItem(`gh_data_${username}`);
+            if (cachedData && !isRefresh) {
+                const data = JSON.parse(cachedData);
+                renderAll(data.profile, data.repos, data.events, data.contribData);
+            }
+
             const [profileRes, reposRes, eventsRes, contribRes] = await Promise.all([
-                fetch(`https://api.github.com/users/${username}`),
-                fetch(`https://api.github.com/users/${username}/repos?sort=pushed&per_page=100`),
-                fetch(`https://api.github.com/users/${username}/events/public?per_page=100`),
-                fetch(`https://github-contributions-api.deno.dev/${username}.json`)
+                fetch(`https://api.github.com/users/${username}${cb}`),
+                fetch(`https://api.github.com/users/${username}/repos?sort=pushed&per_page=100${cb.replace('?','&')}`),
+                fetch(`https://api.github.com/users/${username}/events/public?per_page=100${cb.replace('?','&')}`),
+                fetch(`https://github-contributions-api.deno.dev/${username}.json${cb}`).catch(() => null)
             ]);
+
+            // Early check for rate limit
+            if (profileRes.status === 403) throw new Error('Rate limit exceeded');
+            if (profileRes.status === 404) throw new Error('User not found');
 
             const profile = await profileRes.json();
             const repos = await reposRes.json();
             const events = await eventsRes.json();
-            const contribData = await contribRes.json();
+            const contribData = contribRes ? await contribRes.json() : null;
 
-            if (profile.message === 'Not Found') {
-                console.error('GitHub user not found');
-                return;
-            }
+            if (profile.id) {
+                // Success! Cache it and render
+                localStorage.setItem(`gh_data_${username}`, JSON.stringify({ profile, repos, events, contribData }));
+                renderAll(profile, repos, events, contribData);
 
-            populateProfile(profile);
-            populateStats(profile, repos);
-            buildContributionGraph(contribData);
-            populateLanguages(repos);
-            populateRepos(repos);
-            populateActivity(events);
-
-            // Update timestamp
-            const lastUpdated = document.getElementById('ghLastUpdated');
-            if (lastUpdated) {
-                const now = new Date().toLocaleString();
-                lastUpdated.innerHTML = `<i class="fas fa-check-circle" style="color: #39d353;"></i> Live data from GitHub &mdash; Last fetched ${now}`;
+                if (lastUpdated) {
+                    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    lastUpdated.innerHTML = `<i class="fas fa-check-circle" style="color: #39d353;"></i> Live synced &mdash; ${now}`;
+                }
             }
         } catch (err) {
-            console.error('GitHub API Error:', err);
-            const lastUpdated = document.getElementById('ghLastUpdated');
+            console.warn('GitHub Sync Issue:', err.message);
             if (lastUpdated) {
-                lastUpdated.innerHTML = `<i class="fas fa-exclamation-triangle" style="color: #f59e0b;"></i> Could not load GitHub data &mdash; <a href="javascript:location.reload()" style="color:#58a6ff;">Retry</a>`;
+                lastUpdated.innerHTML = `<i class="fas fa-history" style="color: #f59e0b;"></i> Using cached data &mdash; <a href="javascript:void(0)" onclick="fetchGitHubDashboard('Mayuraglawe', true)" style="color:#58a6ff; text-decoration: underline;">Retry</a>`;
+            }
+        } finally {
+            if (refreshBtn) {
+                refreshBtn.classList.remove('loading');
+                refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
             }
         }
+    }
+
+    function renderAll(profile, repos, events, contribData) {
+        if (profile) populateProfile(profile);
+        if (profile && repos) populateStats(profile, repos);
+        if (contribData) buildContributionGraph(contribData);
+        if (repos) populateLanguages(repos);
+        if (repos) populateRepos(repos);
+        if (events) populateActivity(events);
     }
 
     function populateProfile(p) {
@@ -764,6 +835,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         calendar.appendChild(gridWrap);
+
+        // Ensure the most recent activity (right side) is visible on mobile load
+        setTimeout(() => {
+            calendar.scrollLeft = calendar.scrollWidth;
+        }, 100);
     }
 
     // ============================
@@ -1078,7 +1154,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
             
-            showMoreBtn.textContent = isHidden ? 'Show less activity' : 'Show all activity';
+            showMoreBtn.textContent = isHidden ? 'See less' : 'See more';
         });
     }
 

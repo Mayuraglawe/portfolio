@@ -539,52 +539,212 @@
     margin-top: 25px;
 }
 
-/* Responsive Styles */
-@media (max-width: 1100px) {
+
+/* Live Pulse & Refresh UI */
+.gh-last-updated {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 40px;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.gh-live-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--gh-g4);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.75rem;
+}
+
+.gh-live-dot {
+    width: 8px;
+    height: 8px;
+    background-color: var(--gh-g4);
+    border-radius: 50%;
+    position: relative;
+}
+
+.gh-live-dot::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    background-color: var(--gh-g4);
+    opacity: 0.4;
+    animation: gh-pulse 2s infinite;
+}
+
+@keyframes gh-pulse {
+    0% { transform: scale(1); opacity: 0.4; }
+    70% { transform: scale(2.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 0; }
+}
+
+.gh-refresh-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--gh-border);
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.gh-refresh-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--gh-blue);
+    color: var(--gh-blue);
+}
+
+.gh-refresh-btn i {
+    transition: transform 0.5s ease;
+}
+
+.gh-refresh-btn.loading i {
+    animation: gh-spin 1s linear infinite;
+}
+
+@keyframes gh-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ========================================
+   RESPONSIVE OVERRIDES (At the bottom)
+   ======================================== */
+@media (max-width: 1024px) {
     .gh-overview {
         grid-template-columns: 1fr;
-        max-width: 800px;
-        margin-left: auto;
-        margin-right: auto;
-    }
-    
-    .gh-profile-sidebar {
-        position: static;
-        max-width: 100%;
+        max-width: 850px;
+        margin: 0 auto;
     }
 }
 
 @media (max-width: 768px) {
-    .gh-stats-bar {
-        grid-template-columns: repeat(2, 1fr);
+    .gh-overview {
+        gap: 30px;
+        padding: 0 15px;
     }
-    
-    .gh-repos-grid {
-        grid-template-columns: 1fr;
+
+    .gh-stats-bar {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 15px;
     }
     
     .gh-profile-sidebar {
-        padding: 20px;
+        padding: 30px;
+        position: static;
+        width: 100%;
+        margin-bottom: 20px;
     }
-}
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
+
+    .gh-main-content {
+        min-width: 0; /* Fix for grid children overflow */
     }
 }
 
-@keyframes fadeInRight {
-    from {
-        opacity: 0;
-        transform: translateX(-20px);
+@media (max-width: 480px) {
+    .github-dashboard {
+        padding: 60px 0;
     }
-    to {
-        opacity: 1;
-        transform: translateX(0);
+
+    .gh-overview {
+        margin-top: 30px;
+        padding: 0 16px;
+        width: 100%;
+        overflow: hidden;
+    }
+
+    .gh-main-content {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .gh-stats-bar {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
+        width: 100% !important;
+    }
+
+    .gh-stat-pill {
+        width: 100% !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        padding: 12px 8px !important;
+        text-align: center !important;
+    }
+
+    .gh-stat-pill i {
+        margin: 0 0 8px 0 !important;
+    }
+
+    .gh-stat-pill strong {
+        margin-left: 0 !important;
+        font-size: 1.1rem !important;
+    }
+
+    .gh-stat-pill i {
+        margin-right: 15px;
+        flex-shrink: 0;
+    }
+
+    .gh-stat-pill strong {
+        margin-left: auto;
+    }
+
+    .gh-contrib-calendar {
+        margin: 0 -16px 20px !important;
+        padding: 15px !important;
+        width: calc(100% + 32px) !important;
+        overflow-x: auto !important;
+        display: block !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Scroll Indicator for Graph */
+    .gh-contrib-calendar::after {
+        content: 'Scroll to view full year →';
+        display: block;
+        text-align: right;
+        font-size: 0.7rem;
+        color: var(--gh-g3);
+        margin-top: 10px;
+        opacity: 0.8;
+    }
+
+    .gh-langs-bar {
+        margin: 15px 0;
+        width: 100% !important;
+    }
+
+    .gh-last-updated {
+        flex-direction: column !important;
+        text-align: center;
+        gap: 10px !important;
+    }
+
+    .gh-refresh-btn {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+
+    .gh-repos-grid {
+        grid-template-columns: 1fr !important;
+        gap: 15px !important;
+    }
+
+    .gh-repo-card {
+        padding: 20px !important;
     }
 }

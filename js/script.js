@@ -233,8 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'Full-Stack System Architect',
         'Next-Gen App Developer',
         'Complex Problem Solver',
-        'Performance Engineer',
-        'Tech Innovator'
+        'Performance Engineer'
     ];
     let phraseIndex = 0;
     let charIndex = 0;

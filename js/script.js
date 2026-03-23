@@ -1159,5 +1159,88 @@ document.addEventListener('DOMContentLoaded', () => {
         dots.forEach((dot, i) => {
             dot.addEventListener('click', () => updateSlider(i));
         });
+
+        // ========================================
+        // ADMIN LOGIN LOGIC
+        // ========================================
+        const signInBtn = document.getElementById('signInBtn');
+        const loginModal = document.getElementById('loginModal');
+        const closeModal = document.getElementById('closeModal');
+        const adminLoginForm = document.getElementById('adminLoginForm');
+        const loginError = document.getElementById('loginError');
+
+        if (signInBtn && loginModal) {
+            signInBtn.addEventListener('click', () => {
+                loginModal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+
+            closeModal.addEventListener('click', () => {
+                loginModal.classList.remove('active');
+                document.body.style.overflow = '';
+                loginError.classList.remove('show');
+                adminLoginForm.reset();
+            });
+
+            // Close on click outside
+            loginModal.addEventListener('click', (e) => {
+                if (e.target === loginModal) {
+                    closeModal.click();
+                }
+            });
+
+            if (adminLoginForm) {
+                adminLoginForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    
+                    const username = document.getElementById('adminUser').value;
+                    const password = document.getElementById('adminPass').value;
+
+                    // Hardcoded credentials as requested
+                    if (username === 'Mayuraglawe' && password === 'mayuraglawe@123') {
+                        loginError.classList.remove('show');
+                        const loginBtn = adminLoginForm.querySelector('.login-btn');
+                        const originalBtnText = loginBtn.innerHTML;
+                        
+                        loginBtn.innerHTML = '<span>Verifying...</span> <i class="fas fa-spinner fa-spin"></i>';
+                        loginBtn.disabled = true;
+
+                        setTimeout(() => {
+                            showToast('Welcome back, Mayur! Access Granted.');
+                            loginModal.classList.remove('active');
+                            document.body.style.overflow = '';
+                            adminLoginForm.reset();
+                            loginBtn.innerHTML = originalBtnText;
+                            loginBtn.disabled = false;
+                            
+                            // Optional: Personal touch for the admin
+                            console.log("%c Admin session started! ", "background: #10b981; color: #fff; font-weight: bold; padding: 4px; border-radius: 4px;");
+                        }, 1200);
+                    } else {
+                        loginError.classList.add('show');
+                        // Shake effect for error
+                        const card = loginModal.querySelector('.login-card');
+                        card.style.animation = 'none';
+                        void card.offsetWidth; // trigger reflow
+                        card.style.animation = 'shake 0.4s cubic-bezier(.36,.07,.19,.97) both';
+                    }
+                });
+            }
+        }
     });
+
+    // Add shake animation to head if not present
+    if (!document.getElementById('loginCustomStyles')) {
+        const style = document.createElement('style');
+        style.id = 'loginCustomStyles';
+        style.innerHTML = `
+            @keyframes shake {
+                10, 90% { transform: translate3d(-1px, 0, 0); }
+                20, 80% { transform: translate3d(2px, 0, 0); }
+                30, 50, 70% { transform: translate3d(-4px, 0, 0); }
+                40, 60% { transform: translate3d(4px, 0, 0); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
 });

@@ -26,6 +26,16 @@
     <!-- Scroll Progress -->
     <div class="scroll-progress" id="scrollProgress"></div>
 
+    <!-- Latest Activity Banner (Admin Managed) -->
+    <div id="latestHighlight" class="highlight-banner hidden">
+        <div class="container banner-container">
+            <span class="banner-tag">Latest Update</span>
+            <p id="bannerTitle" class="banner-text"></p>
+            <a href="#linkedin" class="banner-link">View Post <i class="fas fa-arrow-right"></i></a>
+            <button class="close-banner" id="closeBanner">&times;</button>
+        </div>
+    </div>
+
     <!-- Cursor Glow Effect -->
     <div class="cursor-glow" id="cursorGlow"></div>
 
@@ -371,6 +381,69 @@
             <div class="section-header" data-animate="fade-up">
                 <span class="section-tag">My Work</span>
                 <h2 class="section-title">Featured <span class="gradient-text">Projects</span></h2>
+                <button class="btn btn-primary admin-only" id="openAddProjectModal">
+                    <i class="fas fa-plus"></i> Add Project
+                </button>
+            </div>
+
+            <!-- Project Admin Panel -->
+            <div id="projectAdminPanel" class="li-admin-panel admin-only">
+                <div class="li-admin-header">
+                    <h3><i class="fas fa-tools"></i> Add New Portfolio Project</h3>
+                    <button class="close-admin-panel" id="closeProjectAdmin">&times;</button>
+                </div>
+                <form id="addProjectForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Project Title</label>
+                            <input type="text" id="projTitle" placeholder="e.g. AI Content Generator" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Category</label>
+                            <select id="projCategory" title="Project Category" required>
+                                <option value="web">Web App</option>
+                                <option value="mobile">Mobile</option>
+                                <option value="design">Design</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Challenge (Problem)</label>
+                            <input type="text" id="projChallenge" placeholder="Detailed obstacle description">
+                        </div>
+                        <div class="form-group">
+                            <label>Solution</label>
+                            <input type="text" id="projSolution" placeholder="How you solved it">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Impact / Goal Accomplished</label>
+                        <input type="text" id="projImpact" placeholder="e.g. 99% accuracy">
+                    </div>
+                    <div class="form-group">
+                        <label>Image URL</label>
+                        <input type="text" id="projImage" placeholder="images/project-new.jpg">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>GitHub Link</label>
+                            <input type="url" id="projGithub" placeholder="https://github.com/...">
+                        </div>
+                        <div class="form-group">
+                            <label>Live Demo Link</label>
+                            <input type="url" id="projLive" placeholder="https://...">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Tech Tags (Comma separated)</label>
+                        <input type="text" id="projTags" placeholder="React, Node.js, AI">
+                    </div>
+                    <div class="admin-form-actions">
+                        <button type="submit" class="btn btn-primary">Add Project to Portfolio</button>
+                        <button type="button" class="btn btn-outline" id="cancelAddProject">Cancel</button>
+                    </div>
+                </form>
             </div>
 
             <!-- Filter Buttons -->
@@ -646,6 +719,52 @@
                     <div class="li-card">
                         <div class="li-card-header">
                             <h3 class="li-card-title"><i class="fas fa-rss"></i> Recent Activity</h3>
+                            <button class="btn btn-primary li-admin-only" id="openAddPostModal">
+                                <i class="fas fa-plus"></i> Add Post
+                            </button>
+                        </div>
+                        
+                        <!-- LinkedIn Admin Panel (Form) -->
+                        <div id="liAdminPanel" class="li-admin-panel li-admin-only">
+                            <div class="li-admin-header">
+                                <h3><i class="fas fa-edit"></i> Create New LinkedIn Post</h3>
+                                <button class="close-admin-panel" id="closeAdminPanel">&times;</button>
+                            </div>
+                            <form id="addPostForm">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Post Title</label>
+                                        <input type="text" id="postTitle" placeholder="e.g. SIH 2025 Grand Finale" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Tag / Category</label>
+                                        <input type="text" id="postTag" placeholder="e.g. National Competition" required>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Date</label>
+                                        <input type="text" id="postDate" placeholder="e.g. Jan 2026" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>External Link (Optional)</label>
+                                        <input type="url" id="postLink" placeholder="https://linkedin.com/posts/...">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Post Content</label>
+                                    <textarea id="postContent" rows="4" placeholder="Share the achievement details..." required></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label>Image URL(s) - Comma separated</label>
+                                    <input type="text" id="postImages" placeholder="images/sih1.jpg, images/sih2.jpg">
+                                    <small>Upload images to images/ folder and use paths here.</small>
+                                </div>
+                                <div class="admin-form-actions">
+                                    <button type="submit" class="btn btn-primary">Publish Post</button>
+                                    <button type="button" class="btn btn-outline" id="cancelAddPost">Cancel</button>
+                                </div>
+                            </form>
                         </div>
                         <div class="li-posts-container">
                             <div class="li-post">
@@ -851,6 +970,9 @@
                 <div class="signin-section">
                     <button class="signin-trigger" id="signInBtn" aria-label="Privacy Admin">
                         <i class="fas fa-chevron-right"></i>
+                    </button>
+                    <button class="logout-btn admin-only" id="logoutBtn" aria-label="Admin Logout">
+                        <i class="fas fa-sign-out-alt"></i> Logout
                     </button>
                 </div>
             </div>

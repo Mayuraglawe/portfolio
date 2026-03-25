@@ -183,6 +183,14 @@ img {
     display: none !important;
 }
 
+.admin-only {
+    display: none !important;
+}
+
+body.is-admin .admin-only {
+    display: flex !important;
+}
+
 .nav-container {
     max-width: 1200px;
     margin: 0 auto;
